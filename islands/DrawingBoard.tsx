@@ -9,6 +9,8 @@ export default function DrawingBoard() {
 
     const boardRef = useRef<HTMLCanvasElement>(null);
     const contextRef = useRef<CanvasRenderingContext2D | null>(null);
+    const webSocketRef = useRef<WebSocket | null>(null);
+    //ran out f time will finish websocket implementation later
 
     const[isDrawing, setIsDrawing] = useState(false);
     const[currentLine, setCurrentLine] = useState<Point[]>([]);
