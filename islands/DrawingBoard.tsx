@@ -21,12 +21,22 @@ export default function DrawingBoard() {
         const context = canvas.getContext("2d");
         if (!context) return;
 
-        context.strokeStyle = "#000000";
-        context.lineWidth = 3;
-        
+        const setBoardSize = () => {
 
+            const rectangle = canvas.getBoundingClientRect();
+            canvas.width = rectangle.width;
+            canvas.height = rectangle.height;
+
+            context.strokeStyle = "#000000'";
+            context.lineWidth = 3;
+        }
+
+        setBoardSize();
+        globalThis.addEventListener('resize', setBoardSize);
 
         contextRef.current = context;
+
+        return () => globalThis.removeEventListener("resize", setBoardSize);
     }
 
     const getMouseCoords = (e: MouseEvent): Point => {
@@ -102,6 +112,7 @@ export default function DrawingBoard() {
           onMouseDown={(e) => handleDraw(e, 'start')}
           onMouseMove={(e) => handleDraw(e, 'during')}
           onMouseUp={(e) => handleDraw(e, 'end')}
+          onMouseLeave={(e) => handleDraw(e, 'end')}
         />
   );
 }
