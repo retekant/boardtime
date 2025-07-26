@@ -10,11 +10,11 @@ export default function DrawingBoard() {
     const boardRef = useRef<HTMLCanvasElement>(null);
     const contextRef = useRef<CanvasRenderingContext2D | null>(null);
     const webSocketRef = useRef<WebSocket | null>(null);
-    //ran out f time will finish websocket implementation later
 
     const[isDrawing, setIsDrawing] = useState(false);
     const[currentLine, setCurrentLine] = useState<Point[]>([]);
 
+    //set ups
 
     const setUpCanvas = () => {
         const canvas = boardRef.current;
@@ -41,6 +41,21 @@ export default function DrawingBoard() {
         return () => globalThis.removeEventListener("resize", setBoardSize);
     }
 
+    const setupWebSocket = () => {
+        const protocol = location.protocol == "https:" ? 'wss:' : "ws:";
+        const webSockt = new WebSocket(`${protocol}//${location.host}/api/websockets`);
+
+        webSockt.onmessage = (e) => {
+            const data = JSON.parse(e.data);
+            drawOnlineLine(data);
+            
+        }
+        webSocketRef.current = webSockt;
+
+    }
+
+    // gets
+
     const getMouseCoords = (e: MouseEvent): Point => {
 
         const canvas = boardRef.current;
@@ -66,9 +81,7 @@ export default function DrawingBoard() {
         }
     }
 
-    useEffect(() => {
-        setUpCanvas();
-    }, []);
+    //handles
 
     const handleDraw = (e: MouseEvent, type: 'start' | 'during' | 'end') => {
 
@@ -94,6 +107,7 @@ export default function DrawingBoard() {
 
             context.beginPath();
             context.moveTo(point.x, point.y);
+            sendDrawing('start', point);
         }
 
         else if(type == "during"){
@@ -103,10 +117,43 @@ export default function DrawingBoard() {
 
             context.lineTo(point.x, point.y);
             context.stroke();
+            sendDrawing('draw', point);
         }
 
     }
 
+    //use effects
+    useEffect(() => {
+        setUpCanvas();
+        setupWebSocket();
+    }, []);
+
+    //websockets
+
+    const drawOnlineLine = (data: {type: string, point: Point}) => {
+        const context = contextRef.current;
+        if(!context) return;
+        
+        if(data.type == 'start') {
+            context.beginPath();
+            context.moveTo(data.point.x, data.point.y);
+
+        }
+
+        else if (data.type == 'draw') {
+            context.lineTo(data.point.x, data.point.y);
+            context.stroke();
+        }
+        
+    }
+
+    const sendDrawing = (type: string, point: Point) => {
+        if(!webSocketRef.current) return;
+
+        if (webSocketRef.current.readyState == WebSocket.OPEN){
+            webSocketRef.current.send(JSON.stringify({type, point}));
+        }
+    }
 
   return (
       <canvas
