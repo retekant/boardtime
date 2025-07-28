@@ -14,6 +14,9 @@ export default function DrawingBoard() {
     const[isDrawing, setIsDrawing] = useState(false);
     const[currentLine, setCurrentLine] = useState<Point[]>([]);
 
+    const[loadID, setLoadID] = useState<string>("");
+    const[saveID, setSaveID] = useState<string>("");
+
     //set ups
 
     const setUpCanvas = () => {
@@ -52,6 +55,18 @@ export default function DrawingBoard() {
         }
         webSocketRef.current = webSockt;
 
+    }
+
+    const generateID = () => {
+
+        const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+        let result = '';
+
+        for (let i = 0; i < 24; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+
+        return result;
     }
 
     // gets
@@ -122,6 +137,72 @@ export default function DrawingBoard() {
 
     }
 
+    const handleSave = async () => {
+        const canvas = boardRef.current;
+        if(!canvas) return;
+
+        const id = generateID();
+        const imageData = canvas.toDataURL();
+
+        try {
+            const res = await fetch('/api/saveDrawing', {
+                method: "POST",
+                headers: { 'Content-Type': 'application/json'},
+                body: JSON.stringify({id, imageData}),
+            })
+
+            if (res.ok) setSaveID(id);
+        }
+
+        catch (err) {
+            console.error("Failed to save:", err);
+
+        }
+
+    }
+
+    const handleLoad = async () => {
+
+        if (!loadID) return;
+
+        try {
+            const res = await fetch(`/api/loadDrawing/${loadID}`);
+
+            if (res.ok) {
+
+                const data = await res.json();
+
+                const canvas = boardRef.current;
+                const context = contextRef.current;
+
+                if (!canvas || !context) return;
+
+
+                const img = new Image();
+
+                img.onload = () => {
+                    context.clearRect(0, 0, canvas.width, canvas.height);
+                    context.drawImage(img, 0, 0);
+                };
+
+                img.src = data.imageData;
+            }
+        } 
+        
+        catch (error) {
+            console.error('Failed to load drawing:', error);
+        }
+    };
+
+    const handleClear = () => {
+        const canvas = boardRef.current;
+        const context = contextRef.current;
+        if (!canvas || !context) return;
+
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        setSaveID("");
+    };
+
     //use effects
     useEffect(() => {
         setUpCanvas();
@@ -156,6 +237,7 @@ export default function DrawingBoard() {
     }
 
   return (
+    <div class="w-full h-full relative">
       <canvas
           ref={boardRef} class="inset-0 cursor-crosshair touch-none w-full h-full bg-white"
           onMouseDown={(e) => handleDraw(e, 'start')}
@@ -163,5 +245,42 @@ export default function DrawingBoard() {
           onMouseUp={(e) => handleDraw(e, 'end')}
           onMouseLeave={(e) => handleDraw(e, 'end')}
         />
+
+        <div class="bg-emerald-300 flex flex-col text-white">
+
+              <button 
+                  onClick={handleSave}
+                  class="bg-black"
+              >
+                  Save
+              </button>
+              
+                <input
+                    type="text"
+                    value={loadID}
+                    onInput={(e) => setLoadID((e.target as HTMLInputElement).value)}
+                    placeholder="Enter ID to load"
+                    class="px-2 py-1 border rounded text-sm"
+                />
+
+
+                <button 
+                    onClick={handleLoad}
+                     class="bg-gray-600"
+                >
+                    Load
+                </button>
+              
+              
+              <button 
+                  onClick={handleClear}
+                  class="bg-indigo-950"
+              >
+                  Clear
+              </button>
+              
+          </div>
+          <div>ID: {saveID ? saveID : ""}</div>
+      </div>
   );
 }
