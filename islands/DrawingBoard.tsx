@@ -194,12 +194,27 @@ export default function DrawingBoard() {
         }
     };
 
-    const handleClear = () => {
+    const handleClear = async () => {
         const canvas = boardRef.current;
         const context = contextRef.current;
         if (!canvas || !context) return;
 
         context.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (saveID) {
+            try {
+                await fetch('/api/deleteDrawing', {
+                    method: "DELETE",
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: saveID }),
+                });
+            } 
+            
+            catch (err) {
+                console.error("Failed to delete saved data:", err);
+            }
+        }
+
         setSaveID("");
     };
 
