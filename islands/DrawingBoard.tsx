@@ -286,8 +286,10 @@ export default function DrawingBoard() {
         />
 
         <div class="bg-emerald-300 flex flex-col text-white">
-
-            <ToolControls settings={settings} onSettingsChange={setSettings}/>
+            <div class='bg-black'>
+                <ToolControls settings={settings} onSettingsChange={setSettings}/>
+            </div>
+            
             <div>
 
               <button 
