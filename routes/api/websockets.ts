@@ -12,13 +12,6 @@ export function handler(req: Request): Response {
     socket.onopen = async () => {
         sockets.add(socket);
 
-        const drawings = kv.list({ prefix: ["drawings"] });
-
-        for await (const entry of drawings) {
-            if (socket.readyState == WebSocket.OPEN) {
-                socket.send(JSON.stringify(entry.value));
-            }
-        }
     }
 
     socket.onclose = () => sockets.delete(socket);
