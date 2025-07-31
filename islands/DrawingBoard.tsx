@@ -1,4 +1,5 @@
-import {useState, useEffect, useRef} from "preact/hooks";
+import { useState, useEffect, useRef } from "preact/hooks";
+import ToolControls, { toolSettings } from "../islands/toolControls.tsx";
 
 interface Point {
   x: number;
@@ -17,6 +18,11 @@ export default function DrawingBoard() {
     const[loadID, setLoadID] = useState<string>("");
     const[saveID, setSaveID] = useState<string>("");
 
+
+    const[settings, setSettings] = useState<toolSettings>({
+        color: "#000000",
+        size: 3  });
+
     //set ups
 
     const setUpCanvas = () => {
@@ -32,7 +38,7 @@ export default function DrawingBoard() {
             canvas.width = rectangle.width;
             canvas.height = rectangle.height;
 
-            context.strokeStyle = "#000000'";
+            context.strokeStyle = "#000000";
             context.lineWidth = 3;
         }
 
@@ -224,6 +230,24 @@ export default function DrawingBoard() {
         setupWebSocket();
     }, []);
 
+    useEffect(() => {
+        const context = contextRef.current;
+
+        if (context) {
+            updateCanvasSettings(context);
+        }
+
+    }, [settings]);
+
+
+    // updates? might go in a dif category 
+
+    const updateCanvasSettings = (context: CanvasRenderingContext2D) => {
+
+        context.strokeStyle = settings.color;
+        context.lineWidth = settings.size;
+
+    }
     //websockets
 
     const drawOnlineLine = (data: {type: string, point: Point}) => {
@@ -263,6 +287,9 @@ export default function DrawingBoard() {
 
         <div class="bg-emerald-300 flex flex-col text-white">
 
+            <ToolControls settings={settings} onSettingsChange={setSettings}/>
+            <div>
+
               <button 
                   onClick={handleSave}
                   class="bg-black"
@@ -296,6 +323,7 @@ export default function DrawingBoard() {
               
           </div>
           <div>ID: {saveID ? saveID : ""}</div>
+          </div>
       </div>
   );
 }
